@@ -1,20 +1,17 @@
 ### function for counting number of cycles of all possible sizes
-count_cycles<-function(net){
-  net<-net1
+count_cycles<-function(net, nmax=length(V(net))){ # default nmax = size of the network
+  #net<-net1
   ### create adjacency matrix
   lm<-laplacian_matrix(net) # matrix representation
   A<-as.matrix(lm)
   A[which(A>=0)]<-0
   A[which(A<0)]<-1
-  # find max possible length of a cycle
-  nmax<-dim(A)[1]
-  # create table for cycle counts 
+  ### create table for cycle counts 
   ncyc<-matrix(0,nmax/2,2)
   ncyc[,1]<-seq(2,nmax, by=2)
   i<-1
   k<-1
   while (i <= nmax){  # while we haven't exceeded number of nodes
-    i<-i+1
     if (i%%2==0){     # for all even numbers
       Ai<-A
       for (j in 2:i){ # calc A^i
@@ -33,11 +30,11 @@ count_cycles<-function(net){
       }
       k<-k+1
     }
+    i<-i+1
   }
   colnames(ncyc)<-c("length", "number")
   return (ncyc)
 }
-
 
 ### fuction for plotting single network
 plot_network<-function(filename){ # paste("data/",flist[1], sep="")

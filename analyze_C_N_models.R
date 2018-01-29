@@ -12,7 +12,7 @@ setwd("/Users/Zireael/Desktop/Maslov/CommunMetab") # replace with your working d
 source("functions.R")    # some custom functions
 
 ### read data
-links<-fread("data/Network_5_5_34_3_alt2.txt", header = F, stringsAsFactors = F) #how to read just one
+#links<-fread("data/Network_5_5_34_3_alt2.txt", header = F, stringsAsFactors = F) #how to read just one
 flist<-list.files("data",pattern="Network_")
 
 ### plot all single networks:
@@ -22,6 +22,25 @@ for (file in flist) {
   plot_network(paste("data/", file, sep=""))
   dev.off()
 }
+
+### look at cycles statistics:
+counts<-data.frame(matrix(NA, nrow = length(flist), ncol = 6))
+i<-1
+for (file in flist) {
+  print(file)
+  links<-fread(paste("data/", file, sep=""), header = F, stringsAsFactors = F)
+  nodes<-unique(as.vector(as.matrix(links)))
+  
+  ### create net
+  net <- graph_from_data_frame(d=links, vertices=nodes, directed=T) 
+  net <- simplify(net, remove.multiple = F, remove.loops = F) 
+  ncyc<-count_cycles(net, nmax=10)
+  counts[i,1]<-file
+  counts[i,2:6]<-ncyc[,2]
+  i<-i+1
+}
+### check how many cycles of each type we have:
+print(rbind(ncyc[,1],colSums(counts[,2:6])))
 
 ### compare two networks (alternate states)
 links1<-fread("data/Network_5_5_34_3_alt1.txt", header = F, stringsAsFactors = F)
@@ -57,7 +76,7 @@ plot(net, edge.arrow.size=1, vertex.label.cex=1,
 dev.off()
 
 #### some exp with calculation of a loop length
-links1<-fread("data/Network_5_5_34_3_alt2.txt", header = F, stringsAsFactors = F)
+links1<-fread("data/Network_5_5_1_2_alt1.txt", header = F, stringsAsFactors = F)
 # add cycles
 links1<-rbind(links1, t(c("N3", "C1"))) # length 2
 
