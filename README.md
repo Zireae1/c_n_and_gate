@@ -6,4 +6,5 @@ Each bacteria reqire one carbon (C) and one nitrogen (N) source for growth, one 
 analyze_C_N_models.R - contains script for analysis of a bacterial networks constructed in a following way: vertices represent nutrients,
                        edges - survivng bacterial species, arrow direction shows limitation of a particular specie - from limiting
                        nutrient to the enriched one
+
 functions.R          - contains all additional functions used by analyze_C_N_models.R
