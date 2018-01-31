@@ -37,7 +37,7 @@ count_cycles<-function(net, nmax=length(V(net))){ # default nmax = size of the n
 }
 
 ### fuction for plotting single network
-plot_network<-function(filename){ # paste("data/",flist[1], sep="")
+plot_network<-function(filename, layout=layout.bipartite){ 
   links<-fread(filename, header = F, stringsAsFactors = F)
   nodes<-unique(as.vector(as.matrix(links)))
   
@@ -52,10 +52,42 @@ plot_network<-function(filename){ # paste("data/",flist[1], sep="")
   
   ### plot network
   plot_net<-plot(net, edge.arrow.size=1, vertex.label.cex=1, edge.curved=curve_multiple(net), 
-                 vertex.label.color="black", layout=layout.bipartite, 
-                 vertex.size=30, edge.color="black", edge.width=2, edge.arrow.size=1,
+                 vertex.label.color="black", layout=layout, 
+                 vertex.size=10, edge.color="black", edge.width=2, edge.arrow.size=1,
                  vertex.color = col[as.numeric(V(net)$type) + 1])
   return(plot_net)
+}
+
+### function for comparison of two networks
+plot_joint_network<-function(file1, file2){
+  links1<-fread(file1, header = F, stringsAsFactors = F)
+  links2<-fread(file2, header = F, stringsAsFactors = F)
+  merged<-rbind(links1,links2) # joint network 
+  nodes<-unique(as.vector(as.matrix(merged)))
+  
+  ### create networks
+  net1 <- graph_from_data_frame(d=links1, vertices=nodes, directed=T) 
+  #net2 <- graph_from_data_frame(d=links2, vertices=nodes, directed=T) 
+  net <- graph_from_data_frame(d=merged, vertices=nodes, directed=T) 
+  
+  ### set different colors for Carbon and Nitrogen
+  nodes<-cbind(nodes,lapply(nodes, function(x) strsplit(x, split = "")[[1]][1]))
+  V(net)$type <- nodes[,2] %in% "N" 
+  col <- c("red", "royal blue") # gold, etc
+  
+  ### set defferent colors for bacteria in different states
+  ecol <- rep("black", ecount(net))
+  ecol[which(E(net)%in%E(net1))] <- "firebrick"
+  
+  ### plot network
+  plot(net, edge.arrow.size=1, vertex.label.cex=1, 
+       #edge.curved=seq(-0.5, 0.5, length = ecount(net)), 
+       edge.curved=autocurve.edges2(net, start=0.3),
+       vertex.label.color="black", #layout=layout.bipartite, 
+       vertex.size=20, edge.color=ecol, 
+       edge.width=2, edge.arrow.size=0.4,
+       asp = 0.9,
+       vertex.color = col[as.numeric(V(net)$type) + 1])
 }
 
 ### fixed autocurve function for curving multiple edges on graph
