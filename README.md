@@ -1,5 +1,5 @@
-## The project contains files for statistical analysis of Parth models of microbial communities. 
-
+## The project contains files for statistical analysis models of microbial communities. 
+===
 **Problem setup**:
 
 Each bacteria reqire one carbon (C) and one nitrogen (N) source for growth, one of them could be limiting. One resource may be utilized by several bacterial species, but could not be limiting for more than one. At the initial setup we have M carbon and M nitrogen sources and set of MxM possible species. Bacteria is added one by one in a random order. After thousands of addition rounds each specie was introduced multiple times, but only subset of them (2M at max) was able to survive.
