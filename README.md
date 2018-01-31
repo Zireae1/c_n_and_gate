@@ -10,5 +10,14 @@ contains script for analysis of a bacterial networks constructed in a following 
                        edges - survivng bacterial species, arrow direction shows limitation of a particular specie - from limiting
                        nutrient to the enriched one
 
-functions.R:          
-contains all additional functions used by analyze_C_N_models.R
+functions.R: 
+
+contains all custom functions used in analyze_C_N_models.R
+
+data/:
+
+contains example of files with networks
+
+graphs/:
+
+contains all graphical output
