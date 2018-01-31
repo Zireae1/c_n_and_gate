@@ -1,4 +1,4 @@
-The project contains files for statistical analysis of Parth models of microbial communities. 
+#The project contains files for statistical analysis of Parth models of microbial communities. 
 
 Problem setup:
 
