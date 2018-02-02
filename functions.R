@@ -37,18 +37,7 @@ count_cycles<-function(net, nmax=length(V(net))){ # default nmax = size of the n
 }
 
 ### fuction for plotting single network
-plot_network<-function(filename, layout=layout.bipartite, idc, idn, vs=20){ 
-  links<-fread(filename, header = F, stringsAsFactors = F)
-  #nodes<-unique(as.vector(as.matrix(links)))
-  cnum<-as.numeric(strsplit(filename, "_")[[1]][idc])
-  nnum<-as.numeric(strsplit(filename, "_")[[1]][idn])
-  nodes<-vector()
-  for (i in 1:cnum){
-    nodes<-rbind(nodes, paste("C",i, sep=""))
-  }
-  for (i in 1:nnum){
-    nodes<-rbind(nodes, paste("N",i, sep=""))
-  }
+plot_network<-function(links, nodes, layout=layout.bipartite, idc, idn, vertex.size=20){ 
   ### create net
   net <- graph_from_data_frame(d=links, vertices=nodes, directed=T) 
   net <- simplify(net, remove.multiple = F, remove.loops = F) 
@@ -61,7 +50,7 @@ plot_network<-function(filename, layout=layout.bipartite, idc, idn, vs=20){
   ### plot network
   plot_net<-plot(net, edge.arrow.size=1, vertex.label.cex=1, edge.curved=curve_multiple(net), 
                  vertex.label.color="black", layout=layout, 
-                 vertex.size=vs, edge.color="black", edge.width=2, edge.arrow.size=1,
+                 vertex.size=vertex.size, edge.color="black", edge.width=2, edge.arrow.size=1,
                  vertex.color = col[as.numeric(V(net)$type) + 1])
   return(plot_net)
 }

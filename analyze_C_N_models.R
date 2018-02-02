@@ -11,21 +11,32 @@ library(psych)          # for caclulation of trace for a matrix
 setwd("/Users/Zireael/Desktop/Maslov/CommunMetab") # replace with your working directory
 source("functions.R")    # some custom functions
 
-### read network data
-#links<-fread("data/Network_5_5_34_3_alt2.txt", header = F, stringsAsFactors = F) # how to read just one
-flist<-list.files("data",pattern="Network_")
+### list files with network in data/x_x folder
+dir<-c("7_7")
+flist<-list.files(paste("data/", dir, "/", sep=""),pattern="Network_")
 
 ###################################
 ###   Single network analysis   ###
 ###################################
 
+cnum<-as.numeric(strsplit(dir, "_")[[1]][1])
+nnum<-as.numeric(strsplit(dir, "_")[[1]][2])
+nodes<-vector()
+for (i in 1:cnum){
+  nodes<-rbind(nodes, paste("C",i, sep=""))
+}
+for (i in 1:nnum){
+  nodes<-rbind(nodes, paste("N",i, sep=""))
+}
 ### save diagrams for all networks:
 for (file in flist) {
   print(file)
-  cairo_pdf(paste("graphs/", gsub(".txt", "", file), "_plot.pdf", sep=""), 
-            width = 8, height = 8) # save plot
-  plot_network(paste("data/", file, sep=""), layout=layout_nicely, 
-               idc=4, idn=5, vs=20) # default layout is bipartite
+  links<-fread(paste("data/", dir,"/", file, sep=""), header = F, stringsAsFactors = F)
+  #nodes<-unique(as.vector(as.matrix(links)))
+  cairo_pdf(paste("graphs/", dir, "/", gsub(".txt", "", file), "_plot.pdf", sep=""), 
+            width = 8, height = 8)                             # save plot
+  plot_network(links, nodes, layout=layout_nicely, # default layout is bipartite
+               idc=4, idn=5, vertex.size=20)                   # ids of C and N in filename
   dev.off()
 }
 
@@ -34,7 +45,7 @@ counts<-data.frame(matrix(NA, nrow = length(flist), ncol = 6))
 i<-1
 for (file in flist) {
   print(file)
-  links<-fread(paste("data/", file, sep=""), header = F, stringsAsFactors = F)
+  links<-fread(paste("data/", dir, "/", file, sep=""), header = F, stringsAsFactors = F)
   nodes<-unique(as.vector(as.matrix(links)))
   ### create net
   net <- graph_from_data_frame(d=links, vertices=nodes, directed=T) 
@@ -48,35 +59,53 @@ for (file in flist) {
 print(rbind(ncyc[,1],colSums(counts[,2:6])))
 ### save barplot for cycle counts
 colnames(counts)<-c("netname", "2", "4", "6", "8", "10")
-cairo_pdf(paste("graphs/", "Cycle_counts_plot.pdf", sep=""), 
+cairo_pdf(paste("graphs/", dir, "/","Cycle_counts_plot.pdf", sep=""), 
           width = 8, height = 8) # save plot
-xx<-barplot(as.matrix(counts[,2:6]),ylim=c(0,50), 
+barplot_cyc<-barplot(as.matrix(counts[,3:6]),ylim=c(0,50), 
         xlab="Cycle length", ylab="Count", 
-        main = "Number of cycles of length N (449 states)", 
+        main = "Number of cycles of length N (445 states)", 
         col="royal blue")
-text(x=xx,y = colSums(counts[,2:6]), label=colSums(counts[,2:6]), 
+text(x=barplot_cyc,y = colSums(counts[,3:6]), label=colSums(counts[,3:6]), 
      pos = 3, cex = 1, col = "black")
+barplot_cyc
 dev.off()
 
 ############################################################## 
 ### comparison of alternative states for bistable systems  ###
 ##############################################################
-tt<-flist[grep("alt", flist)]
-stats.flist<-list.files("data",pattern="TotalNoOfSteadyStates_")
+tt<-flist[grep("Alt", flist)]
+stats.flist<-list.files(dir,pattern="TotalNoOfSteadyStates_")
 k<-1
 for (i in seq(1,length(tt), 2)){
-  st<-fread(paste("data/", stats.flist[k], sep=""), header = F)
+  st<-fread(paste("data/", dir, "/", stats.flist[k], sep=""), header = F)
   ### save diagram of joint network
-  cairo_pdf(paste("graphs/", gsub(".txt", "", tt[i]), "_alt2_plot.pdf", sep=""), 
+  cairo_pdf(paste("graphs/", dir, "/", gsub(".txt", "", tt[i]), "_alt2_plot.pdf", sep=""), 
             width = 6, height = 6)
-  plot_joint_network(paste("data/", tt[i], sep=""), paste("data/", tt[i+1], sep=""))
+  plot_joint_network(paste("data/", dir, "/", tt[i], sep=""), 
+                     paste("data/", dir, "/",tt[i+1], sep=""))
   legend("topleft", title = "Frequency of states",legend = st$V2, col = c("firebrick", "black"), 
          lty= 1, lwd = 2, bty="n")
   dev.off()
   k<-k+1
 }
 
-
+### find alternative states
+alt<-gsub("(.*)_", "", flist)
+alt<-as.numeric(gsub(".txt", "", alt))
+alt<-data.frame(flist, alt)
+str(alt)
+k<-1
+i<-1
+while(i<=nrow(alt)){
+  alt_files<-vector()
+  if(alt[i+1,2]=alt[i,2]+1){
+    alt_files[k]<-alt[i,1]
+    k<-k+1
+    i<-i+1
+  }else{
+    k<-1
+    i<-i+1}
+}
 
 ### compare two networks (alternate states) for 3-stable
 links1<-fread("data/Network_16_1002_5_5_1_10_100_0.1_1.0_100_500_Alt_1.txt", header = F, stringsAsFactors = F)
