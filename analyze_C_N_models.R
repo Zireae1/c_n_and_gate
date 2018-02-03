@@ -1,5 +1,6 @@
 rm(list=ls(all=TRUE))
 getwd()
+#update.packages(ask = FALSE, dependencies = c('Suggests')) #update all installed R packages
 
 library(data.table)     # for fread function
 library(RColorBrewer)   # for nice color palettes
@@ -12,13 +13,13 @@ setwd("/Users/Zireael/Desktop/Maslov/CommunMetab") # replace with your working d
 source("functions.R")    # some custom functions
 
 ### list files with network in data/x_x folder
-dir<-c("7_7")
+dir<-c("3_3")
 flist<-list.files(paste("data/", dir, "/", sep=""),pattern="Network_")
 
 ###################################
 ###   Single network analysis   ###
 ###################################
-
+### construct set of nodes (number of C and N) from name of the input directory
 cnum<-as.numeric(strsplit(dir, "_")[[1]][1])
 nnum<-as.numeric(strsplit(dir, "_")[[1]][2])
 nodes<-vector()
@@ -32,43 +33,104 @@ for (i in 1:nnum){
 for (file in flist) {
   print(file)
   links<-fread(paste("data/", dir,"/", file, sep=""), header = F, stringsAsFactors = F)
+  ### try to use abundance and concentration data
+  # name<-gsub("Network_", "", file)
+  # resdata<-paste("data/", dir,"/ResourceData_", name, sep="")
+  # if(file.exists(resdata)){
+  #   resources<-fread(resdata, header = F, stringsAsFactors = F)
+  #   nodes<-cbind(nodes, resources$V2)
+  # }
+  # bacdata<-paste("data/", dir,"/SpeciesData_", name, sep="")
+  # if(file.exists(bacdata)){
+  #   bacteria<-fread(bacdata, header = F, stringsAsFactors = F)
+  #   bacteria<-bacteria[which(bacteria[,3]>0),]
+  #   links<-cbind(links, round(log10(bacteria[,3])))
+  # }
   #nodes<-unique(as.vector(as.matrix(links)))
   cairo_pdf(paste("graphs/", dir, "/", gsub(".txt", "", file), "_plot.pdf", sep=""), 
-            width = 8, height = 8)                             # save plot
-  plot_network(links, nodes, layout=layout_nicely, # default layout is bipartite
-               idc=4, idn=5, vertex.size=20)                   # ids of C and N in filename
+            width = 8, height = 8)                                 # save plot
+  plot_network(links, nodes, layout=layout_nicely, vertex.size=20) # default layout is bipartite
+               
   dev.off()
 }
 
 ### look at cycles statistics:
-counts<-data.frame(matrix(NA, nrow = length(flist), ncol = 6))
+counts<-data.frame(matrix(NA, nrow = length(flist), ncol = 2+length(V(net))/2+length(nodes)*2))
+colnames(counts)<-c("netname", as.character(seq(2,length(V(net)), by=2)), 
+                    sub("", "d_", nodes), sub("", "ind_", nodes), "mean_path")
 i<-1
 for (file in flist) {
   print(file)
   links<-fread(paste("data/", dir, "/", file, sep=""), header = F, stringsAsFactors = F)
-  nodes<-unique(as.vector(as.matrix(links)))
+  #nodes<-unique(as.vector(as.matrix(links)))
   ### create net
   net <- graph_from_data_frame(d=links, vertices=nodes, directed=T) 
   net <- simplify(net, remove.multiple = F, remove.loops = F) 
-  ncyc<-count_cycles(net, nmax=10)
-  counts[i,1]<-file
-  counts[i,2:6]<-ncyc[,2]
+  ncyc<-count_cycles(net)
+  k<-1
+  counts[i, k]<-file
+  k<-k+length(file)
+  counts[i, k:(k+length(ncyc[,2])-1)]<-ncyc[,2]
+  k<-k+length(ncyc[,2])
+  counts[i, k:(k+length(degree(net))-1)]<-degree(net)
+  k<-k+length(degree(net))
+  counts[i, k:(k+length(degree(net))-1)]<-degree(net, mode="in")
+  counts[i, ncol(counts)]<-average.path.length(net, directed=T, unconnected=T)
+  #mean(degree(net, mode="out")) # Outdegree for net
   i<-i+1
 }
+str(counts)
 ### check how many cycles of each type we have:
-print(rbind(ncyc[,1],colSums(counts[,2:6])))
+print(rbind(ncyc[,1],colSums(counts[,2:4])))
 ### save barplot for cycle counts
-colnames(counts)<-c("netname", "2", "4", "6", "8", "10")
-cairo_pdf(paste("graphs/", dir, "/","Cycle_counts_plot.pdf", sep=""), 
+cairo_pdf(paste("graphs/", dir, "/","Cycle_counts_plot.pdf", sep = ""), 
           width = 8, height = 8) # save plot
-barplot_cyc<-barplot(as.matrix(counts[,3:6]),ylim=c(0,50), 
-        xlab="Cycle length", ylab="Count", 
-        main = "Number of cycles of length N (445 states)", 
+barplot_cyc <- barplot(as.matrix(counts[, 3:(3+length(V(net))/2-2)]), ylim = c(0,50), 
+        xlab = "Cycle length", ylab="Count", 
+        main = paste("Number of cycles of length N (", nrow(counts), " states)", sep=""), 
         col="royal blue")
-text(x=barplot_cyc,y = colSums(counts[,3:6]), label=colSums(counts[,3:6]), 
+text(x = barplot_cyc, y = colSums(counts[, 3:(3+length(V(net))/2-2)]), 
+     label = paste(round(colSums(counts[, 3:(3+length(V(net))/2-2)])/nrow(counts), 
+                         digits = 4)*100, "%", sep=""), 
      pos = 3, cex = 1, col = "black")
-barplot_cyc
+#barplot_cyc
 dev.off()
+
+### create plot for degree of nodes, path, max indegree (hubs), etc 
+### TO DO: coord in row auto
+cairo_pdf(paste("graphs/", dir, "/","General_stats_plot.pdf", sep = ""), 
+          width = 8, height = 8) # save plot
+par(mfrow = c(2,2)) # Set up a 2x2 display
+hist(rowMeans(counts[7:16]), xlab = "Mean node degree", 
+     main = "Mean Degree", #prob = TRUE, 
+     col = "royal blue", breaks = 10)
+# hist(rowMeans(counts[17:26]), xlab = "Mean indegree", 
+#      main = "Mean Indegree Distribution", #prob = TRUE,  
+#      col =" royal blue", breaks = 10)
+hist(apply(counts[17:26], 1, max) , xlab = "Max node indegree", 
+     main = "Max Indegree", #prob = TRUE, 
+     col = "royal blue", breaks = 10)
+hist(counts$mean_path, xlab = "Mean path length", 
+     main = "Mean Path Length", #prob = TRUE, 
+     col = "royal blue", breaks = 40)
+hist(counts$mean_path/rowSums(counts[17:26])*10, 
+     xlab = "Mean path length / Number of species", 
+     main = "Normalized Mean Path Length", #prob = TRUE, 
+     col = "royal blue", breaks = 20)
+dev.off()
+par(mfrow = c(1,1)) # Restore display
+
+
+
+plot(density(counts$mean_path/rowSums(counts[17:26])*10))
+
+### look how many bacterial species survived:
+counts$mean_path/rowSums(counts[17:26])
+
+
+plot(c(3,4,5,7),c(13/200, 8/100, 41/400, 17/100), 
+     xlab="CN number", ylab="Fraction of bistable states")
+
 
 ############################################################## 
 ### comparison of alternative states for bistable systems  ###
@@ -215,6 +277,4 @@ dev.off()
 #   dev.off()
 # }
 
-
-count_cycles(net1)
 

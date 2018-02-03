@@ -1,57 +1,71 @@
 ### function for counting number of cycles of all possible sizes
-count_cycles<-function(net, nmax=length(V(net))){ # default nmax = size of the network
+count_cycles <- function(net, nmax = length(V(net))){ # default nmax = size of the network
   #net<-net1
   ### create adjacency matrix
-  lm<-laplacian_matrix(net) # matrix representation
-  A<-as.matrix(lm)
-  A[which(A>=0)]<-0
-  A[which(A<0)]<-1
+  lm <- laplacian_matrix(net) # matrix representation
+  A <- as.matrix(lm)
+  A[which(A >= 0)] <- 0
+  A[which(A < 0)] <- 1
   ### create table for cycle counts 
-  ncyc<-matrix(0,nmax/2,2)
-  ncyc[,1]<-seq(2,nmax, by=2)
-  i<-1
-  k<-1
+  ncyc <- matrix(0, nmax/2, 2)
+  ncyc[, 1] <- seq(2, nmax, by=2)
+  i <- 1
+  k <- 1
   while (i <= nmax){  # while we haven't exceeded number of nodes
-    if (i%%2==0){     # for all even numbers
-      Ai<-A
+    if (i %% 2 == 0){     # for all even numbers
+      Ai <- A
       for (j in 2:i){ # calc A^i
-        Ai<-Ai%*%A
+        Ai <- Ai %*% A
       }
-      t<-tr(Ai)       # calc trace(A^i)
-      sum<-0
+      t <- tr(Ai)       # calc trace(A^i)
+      sum <- 0
       for (j in 1:k){
-        if (i%%(2*j)==0){    # find all multiple cycles of smaller length
-          sum<-sum+ncyc[j,2]*2*j
+        if (i %% (2 * j) == 0){    # find all multiple cycles of smaller length
+          sum <- sum + ncyc[j, 2] * 2 * j
         }
       }
-      ncyc[k,2]<-(t-sum)/i   # subtract number of diagonal elements from all smaller multiple cycles 
-      if (ncyc[k,2]>0){      # decrease nmax if cycle is found (each node could be a part of only one cycle) 
-        nmax<-nmax-ncyc[k,2]*i
+      ncyc[k, 2] <- (t - sum) / i   # subtract number of diagonal elements from all smaller multiple cycles 
+      if (ncyc[k, 2] > 0){      # decrease nmax if cycle is found (each node could be a part of only one cycle) 
+        nmax <- nmax - ncyc[k, 2] * i
       }
-      k<-k+1
+      k <- k + 1
     }
-    i<-i+1
+    i <- i + 1
   }
-  colnames(ncyc)<-c("length", "number")
-  return (ncyc)
+  colnames(ncyc) <- c("length", "number")
+  return(ncyc)
 }
 
 ### fuction for plotting single network
-plot_network<-function(links, nodes, layout=layout.bipartite, idc, idn, vertex.size=20){ 
+plot_network <- function(links, nodes, layout = layout.bipartite, vertex.size = 20){ 
   ### create net
-  net <- graph_from_data_frame(d=links, vertices=nodes, directed=T) 
+  net <- graph_from_data_frame(d = links, vertices = nodes, directed = T) 
   net <- simplify(net, remove.multiple = F, remove.loops = F) 
   
   ### set different colors for Carbon and Nitrogen
-  nodes<-cbind(nodes,lapply(nodes, function(x) strsplit(x, split = "")[[1]][1]))
+  nodes <- cbind(nodes,lapply(nodes, function(x) strsplit(x, split = "")[[1]][1]))
   V(net)$type <- nodes[,2] %in% "N" 
   col <- c("red", "royal blue")
   
+  ### try to display concentrations and abundances...
+  #sizes <- round((log10(as.numeric(nodes[,2]))-min(log10(as.numeric(nodes[,2])))+1), digits = 1)*10
+  #size <- as.numeric(nodes[,2])/max(as.numeric(nodes[,2]))
+  #V(net)$size <- size
+  #E(net)$weight <- as.numeric(links$V3)
+  #V(net)$color <- alpha(V(net)$color, V(net)$size/max(V(net)$size))
+  #E(net)$color = alpha("black", E(net)$weight/max(E(net)$weight))
+  
+  V(net)$color <- col[as.numeric(V(net)$type) + 1]
+  E(net)$color <- "black"
   ### plot network
-  plot_net<-plot(net, edge.arrow.size=1, vertex.label.cex=1, edge.curved=curve_multiple(net), 
-                 vertex.label.color="black", layout=layout, 
-                 vertex.size=vertex.size, edge.color="black", edge.width=2, edge.arrow.size=1,
-                 vertex.color = col[as.numeric(V(net)$type) + 1])
+  plot_net <- plot(net, vertex.label.cex = 1, edge.curved = curve_multiple(net), 
+                 vertex.label.color = "black", layout = layout, 
+                 vertex.size = vertex.size, 
+                 #vertex.size = V(net)$size*2,
+                 edge.color = E(net)$color,
+                 edge.width = 1,#E(net)$width,
+                 edge.arrow.size = 1,
+                 vertex.color = V(net)$color)
   return(plot_net)
 }
 
