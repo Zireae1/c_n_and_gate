@@ -70,35 +70,34 @@ plot_network <- function(links, nodes, layout = layout.bipartite, vertex.size = 
 }
 
 ### function for comparison of two networks
-plot_joint_network<-function(file1, file2){
-  links1<-fread(file1, header = F, stringsAsFactors = F)
-  links2<-fread(file2, header = F, stringsAsFactors = F)
-  merged<-rbind(links1,links2) # joint network 
-  nodes<-unique(as.vector(as.matrix(merged)))
+plot_joint_network<-function(merged, nodes, layout = layout.bipartite, vertex.size = 20){
   
   ### create networks
-  net1 <- graph_from_data_frame(d=links1, vertices=nodes, directed=T) 
-  #net2 <- graph_from_data_frame(d=links2, vertices=nodes, directed=T) 
+  #nodes<-unique(as.vector(as.matrix(merged[,1:2])))
   net <- graph_from_data_frame(d=merged, vertices=nodes, directed=T) 
   
   ### set different colors for Carbon and Nitrogen
   nodes<-cbind(nodes,lapply(nodes, function(x) strsplit(x, split = "")[[1]][1]))
   V(net)$type <- nodes[,2] %in% "N" 
-  col <- c("red", "royal blue") # gold, etc
+  vcol <- c("red", "royal blue") # gold, etc
   
   ### set defferent colors for bacteria in different states
-  ecol <- rep("black", ecount(net))
-  ecol[which(E(net)%in%E(net1))] <- "firebrick"
+  ecolors <- c("black","firebrick","olivedrab3","gold","magenta")
+  ecol <- rep(ecolors[1], ecount(net))
+  for (j in 2:length(unique(E(net)$state))){
+    ecol[which(E(net)$state==j)] <- ecolors[j]
+  }
   
-  ### plot network
   plot(net, edge.arrow.size=1, vertex.label.cex=1, 
        #edge.curved=seq(-0.5, 0.5, length = ecount(net)), 
-       edge.curved=autocurve.edges2(net, start=0.3),
+       edge.curved=autocurve.edges2(net, start=0.4),
        vertex.label.color="black", #layout=layout.bipartite, 
-       vertex.size=20, edge.color=ecol, 
-       edge.width=2, edge.arrow.size=0.4,
-       asp = 0.9,
-       vertex.color = col[as.numeric(V(net)$type) + 1])
+       vertex.size=vertex.size, edge.color=ecol, 
+       edge.width=2, edge.arrow.size=1,
+       asp = 1,
+       vertex.color = vcol[as.numeric(V(net)$type) + 1])
+  legend("topleft", title = "Frequency of states",legend = t(st), col = ecolors[1:length(t(st))], 
+         lty= 1, lwd = 2, bty="n")
 }
 
 ### fixed autocurve function for curving multiple edges on graph
