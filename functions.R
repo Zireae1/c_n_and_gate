@@ -70,7 +70,7 @@ plot_network <- function(links, nodes, layout = layout.bipartite, vertex.size = 
 }
 
 ### function for comparison of two networks
-plot_joint_network<-function(merged, nodes, layout = layout.bipartite, vertex.size = 20){
+plot_joint_network<-function(merged, nodes, layout = layout.bipartite, vertex.size = 20, start=0.4){
   
   ### create networks
   #nodes<-unique(as.vector(as.matrix(merged[,1:2])))
@@ -90,7 +90,7 @@ plot_joint_network<-function(merged, nodes, layout = layout.bipartite, vertex.si
   
   plot(net, edge.arrow.size=1, vertex.label.cex=1, 
        #edge.curved=seq(-0.5, 0.5, length = ecount(net)), 
-       edge.curved=autocurve.edges2(net, start=0.4),
+       edge.curved=autocurve.edges2(net, start=start),
        vertex.label.color="black", #layout=layout.bipartite, 
        vertex.size=vertex.size, edge.color=ecol, 
        edge.width=2, edge.arrow.size=1,

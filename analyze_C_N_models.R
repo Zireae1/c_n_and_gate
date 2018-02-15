@@ -13,7 +13,7 @@ setwd("/Users/Zireael/Desktop/Maslov/CommunMetab") # replace with your working d
 source("functions.R")    # some custom functions
 
 ### list files with network in data/x_x folder
-dir<-c("10_10")
+dir<-c("5_5_1")
 flist<-list.files(paste("data/", dir, "/", sep=""), pattern="Network_")
 
 ###################################
@@ -87,7 +87,7 @@ for (file in flist) {
 ### save barplot for cycle counts
 cairo_pdf(paste("graphs/", dir, "/","Cycle_counts_plot.pdf", sep = ""), 
           width = 8, height = 8) # save plot
-barplot_cyc <- barplot(as.matrix(counts[, 3:(3+length(nodes)/2-2)]), ylim = c(0,50), 
+barplot_cyc <- barplot(as.matrix(counts[, 3:(3+length(nodes)/2-2)]), ylim = c(0,100), 
         xlab = "Cycle length", ylab="Count", 
         main = paste("Number of cycles of length N (", nrow(counts), " states)", sep=""), 
         col="royal blue")
@@ -139,6 +139,7 @@ i<-1
 while(i<nrow(alt)){
   alt_files<-vector()
   alt_files[k]<-as.character(alt[i,1])
+  #print(i)
   while(alt[i+1,2]==alt[i,2]+1){
     k<-k+1
     alt_files[k]<-as.character(alt[i+1,1])
@@ -155,17 +156,27 @@ while(i<nrow(alt)){
       st<-rbind(st,fread(paste("data/", dir, "/", stats.flist[j], sep=""), header = F))
     }
     colnames(merged)<-c("from", "to", "state")
-    cairo_pdf(paste("graphs/", dir, "/", gsub("Alt_1.txt", "", alt_files[1]), "joint_plot.pdf", 
+    cairo_pdf(paste("graphs/", dir, "/joint/", gsub("Alt_1.txt", "", alt_files[1]), "joint_plot.pdf", 
                     sep=""), width = 9, height = 9)
-    plot_joint_network(merged, nodes, layout=layout_nicely, vertex.size=15)
+    plot_joint_network(merged, nodes, layout=layout_nicely, vertex.size=15, start=0.4)
     dev.off()
   }
   k<-1
   i<-i+1
 }
 
+### TO DO:
+### average fraction of species survived during experiments for diff N
+### compare alt states (just bi-stable for now):
+### how many in common, reversed limitation
+### how many are different
+### show on plots?
+### calc average statistics
+### any correlation with frequency of states?
+### any corr with cycles?
+
 ### Compare general stats for different NxN:
-dirs<-c("3_3", "4_4", "5_5", "7_7", "10_10")
+dirs<-c("3_3_1", "4_4_1", "5_5_1","6_6_1", "7_7_1","8_8_1", "10_10", "15_15")
 states<-matrix(NA, length(dirs), 3)
 rownames(states)<-dirs
 i<-1
@@ -180,14 +191,27 @@ for (diri in dirs){
 ### save plot for # of states growth with N
 cairo_pdf(paste("graphs/","Multistable_states_fraction_plot.pdf", sep = ""), 
           width = 6, height = 6) # save plot
-x<-c(3,4,5,7,10) # based on all dirs
+x<-c(3,4,5,6,7,8,10, 15) # based on all dirs
 plot(x, (states[,2]/states[,1])*100, pch=16, xlab="CN number",
-     ylab="Fraction of multistable states, %", ylim=c(1,50))
+     ylab="Fraction of multistable states, %", ylim=c(1,50), xlim=c(2,16))
 lines(x, (states[,2]/states[,1])*100, lwd=2)
 points(x, (states[,3]/states[,1])*100, col="red", pch=16)
 lines(x, (states[,3]/states[,1])*100, col="red", lwd=2)
 legend("topleft", title = "# states", legend = c("bi", "tri"), col = c("black", "red"), 
        lty= 1, lwd = 2, bty="n")
+dev.off()
+
+
+######################################
+###    plot small nets for Parth  ####
+######################################
+file<-"424.txt"
+links<-fread(paste("data/", file, sep=""), header = F, stringsAsFactors = F)
+nodes<-unique(as.vector(as.matrix(links)))
+cairo_pdf(paste("graphs/", gsub(".txt", "", file), "_plot.pdf", sep=""), 
+          width = 5, height = 5)                                 # save plot
+plot_network(links, nodes, layout=layout_nicely, vertex.size=30) # default layout is bipartite
+
 dev.off()
 
 
