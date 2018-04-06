@@ -1,4 +1,4 @@
-## The project contains files for statistical analysis models of microbial communities. 
+## The project contains files for statistical analysis of the models for microbial communities of extreme specialists. 
 
 **Problem setup**:
 
