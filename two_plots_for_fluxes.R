@@ -67,17 +67,16 @@ st.ids<-which(sub.states[,id]>0) # find all corresponding rows for the state
 sub.flux<-fluxes[st.ids,]        # create subset of fluxes for the state
 fc<-rowMeans(sub.flux[,1:3])     # calc average fluxes
 fn<-rowMeans(sub.flux[,4:6])
-f.means<-as.data.frame(cbind(fc,fn))
 
-br <- seq(1,max(f.means),by=max(f.means)/100)  # create breaks for flux intervals on heatmap
+br <- seq(1,max(max(c(fc, fn))),by=max(max(c(fc, fn)))/100)  # create breaks for flux intervals on heatmap
 freq<-matrix(0, length(br)-1, length(br)-1)    # initalize empty matrix for counts
 for (i in 2:length(br)){                       # count how many times we have this state for a given range of fluxes
   print(i)
   for (j in 2:length(br)){
-    freq[i-1,j-1]<-length(which((f.means$fc<br[i]&f.means$fc>=br[i-1])&(f.means$fn<br[j]&f.means$fn>=br[j-1])))
+    freq[i-1,j-1]<-length(which((fc<br[i]&fc>=br[i-1])&(fn<br[j]&fn>=br[j-1])))
   }
 }
-sum(rowSums(freq)) # check that all instances are in some bins
+sum(rowSums(freq)) # check that all instances are in some bins (there is a small difference due to the last interval)
 
 # save plot
 my_palette <- colorRampPalette(rev(brewer.pal(11,"PRGn")))(100)
@@ -86,5 +85,5 @@ heatmap.2(freq, trace="none", col=my_palette, Rowv=FALSE, Colv=FALSE,
           dendrogram="none", #margins =c(4,4), 
           symm=T, symkey=F, symbreaks=F, srtCol=360,
           colsep=c(0,ncol(freq)), rowsep=c(0,nrow(freq)), 
-          sepwidth=c(0.01, 0.01), sepcolor="#e0e0e0") #dendrogram="column",  key.par=list(mar=c(12,12,14,14)), lmat=rbind( c(0, 3, 4), c(2,1,0 ) ), lwid=c(1.5, 4, 2 )
+          sepwidth=c(0.01, 0.01), sepcolor="#e0e0e0") 
 dev.off()
